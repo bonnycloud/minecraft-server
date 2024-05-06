@@ -93,7 +93,7 @@ resource "aws_instance" "minecraft" {
     device_index         = 0
   }
   security_groups   = [aws_security_group.ec2.name]
-  key_name          = "zoomkey"
+  key_name          = "${var.application_name}-key"
   tags = {
     Name     = var.application_name
     Stage    = "production"
