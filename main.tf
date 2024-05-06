@@ -1,40 +1,57 @@
 provider "aws" {
-  region = "eu-west-3"
+    region = "eu-west-3"
 }
 
 # ------------------------------------------------------------------------------
 # Network
 # ------------------------------------------------------------------------------
 resource "aws_vpc" "minecraft" {
-  cidr_block = "10.0.0.0/16"
-  tags = {
-    Name = "${var.application_name}-vpc"
-  }
+    cidr_block = "10.0.0.0/16"
+    tags = {
+        Name = "${var.application_name}-vpc"
+    }
 }
 
-resource "aws_subnet" "minecraft" {
-  vpc_id            = aws_vpc.minecraft.id
-  cidr_block        = "10.0.10.0/24"
-  availability_zone = "${var.region}a"
-  tags = {
-    Name = "${var.application_name}-subnet"
-  }
+resource "aws_subnet" "public" {
+    vpc_id            = aws_vpc.minecraft.id
+    cidr_block        = "10.0.10.0/24"
+    availability_zone = "${var.region}a"
+    tags = {
+        Name = "${var.application_name}-subnet"
+    }
 }
 
-resource "aws_network_interface" "minecraft" {
-  subnet_id   = aws_subnet.minecraft.id
-  private_ips = ["10.0.10.100"]
-  tags = {
-    Name = "${var.application_name}-eni"
-  }
+resource "aws_route_table" "minecraft" {
+    vpc_id = aws_vpc.minecraft.id
+    tags = {
+        Name = "${var.application_name}-rt"
+    }
+}
+
+resource "aws_route" "internet" {
+    destination_cidr_block = "0.0.0.0/0"
+    route_table_id         = aws_route_table.minecraft.id
+    gateway_id             = aws_internet_gateway.minecraft.id
+}
+
+resource "aws_route_table_association" "minecraft" {
+    subnet_id      = aws_subnet.public.id
+    route_table_id = aws_route_table.minecraft.id
+}
+
+resource "aws_internet_gateway" "minecraft" {
+    vpc_id = aws_vpc.minecraft.id
+    tags = {
+        Name = "${var.application_name}-igw"
+    }
 }
 
 # ------------------------------------------------------------------------------
 # Security Groups
 # ------------------------------------------------------------------------------
 resource "aws_security_group" "ec2" {
-  name        = "${var.application_name}-efs-sg"
-  vpc_id      = module.vpc.vpc_id
+    name        = "${var.application_name}-sg"
+    vpc_id      = aws_vpc.minecraft.id
 }
 
 resource "aws_security_group_rule" "ingress_ssh" {
@@ -85,19 +102,16 @@ resource "aws_volume_attachment" "minecraft" {
 # EC2
 # ------------------------------------------------------------------------------
 resource "aws_instance" "minecraft" {
-  availability_zone = "${var.region}a"
-  ami               = "ami-0111c5910da90c2a7"
-  instance_type     = "t2.small"
-  network_interface {
-    network_interface_id = aws_network_interface.minecraft.id
-    device_index         = 0
-  }
-  security_groups   = [aws_security_group.ec2.name]
-  key_name          = "${var.application_name}-key"
-  tags = {
-    Name     = var.application_name
-    Stage    = "production"
-    Location = "Europe/Paris"
-  }
-
+    instance_type               = "t2.small"
+    ami                         = "ami-0111c5910da90c2a7"
+    vpc_security_group_ids      = [aws_security_group.ec2.id]
+    subnet_id                   = aws_subnet.public.id
+    associate_public_ip_address = true
+    key_name                    = "${var.application_name}-key"
+    user_data                   = "${file("start.sh")}"
+    tags = {
+        Name     = var.application_name
+        Stage    = "production"
+        Location = "Europe/Paris"
+    }
 }

@@ -8,6 +8,10 @@
 # .tfstate files
 **/*.tfstate*
 
+# Speculative plan
+tfplan
+*.plan
+
 # Crash log files
 crash.log
 crash.*.log
