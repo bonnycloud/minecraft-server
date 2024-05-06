@@ -8,7 +8,6 @@ RUN echo "## Update and install packages" \
     && DEBIAN_FRONTEND="noninteractive" TZ="Europe/Paris" \
     && apt-get -qq -y install --no-install-recommends \
         wget \
-        systemd \
         openjdk-21-jre-headless \
     && echo "## Done"
 
@@ -16,9 +15,9 @@ RUN echo "## Update and install packages" \
 # User
 # ------------------------------------------------------------------------------
 RUN echo "## Create Minecraft user" \
-    && useradd --system --home-dir="/srv/minecraft" \
-        --shell="/bin/false" --user-group minecraft \
-    && mkhomedir_helper minecraft \
+    && groupadd --system --gid 999 minecraft \
+    && useradd --system --uid 999 --gid 999 --home-dir="/srv/minecraft" \
+        --create-home --shell="/bin/false" minecraft \
     && echo "## Done"
 
 # ------------------------------------------------------------------------------
@@ -30,10 +29,13 @@ USER minecraft
 WORKDIR /srv/minecraft
 
 COPY --chown=minecraft:minecraft Docker/server.properties server.properties
+# COPY --chown=minecraft:minecraft Docker/start.sh /
+# RUN chmod +x /start.sh
 
 RUN echo "## Install Minecraft version 1.20.6" \
     && wget https://piston-data.mojang.com/v1/objects/145ff0858209bcfc164859ba735d4199aafa1eea/server.jar \
     && echo "eula=true" > eula.txt \
     && echo "## Done"
 
-CMD ["/usr/bin/java", "-Xms1024M", "-Xmx1536M", "-jar", "server.jar", "--nogui"]
+ENTRYPOINT ["/usr/bin/java", "-Xms1024M", "-Xmx1536M", "-jar", "server.jar", "--nogui"]
+# ENTRYPOINT ["/start.sh"]

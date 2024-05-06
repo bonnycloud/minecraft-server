@@ -16,7 +16,7 @@ data "aws_iam_policy_document" "task_assume" {
 data "aws_iam_policy_document" "task_permissions" {
   statement {
     effect = "Allow"
-    resources = ["*",]
+    resources = ["${aws_cloudwatch_log_group.minecraft_server.arn}:*"]
     actions = [
       "logs:CreateLogStream",
       "logs:CreateLogGroup",
