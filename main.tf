@@ -55,47 +55,48 @@ resource "aws_security_group" "ec2" {
 }
 
 resource "aws_security_group_rule" "ingress_ssh" {
-  security_group_id = aws_security_group.ec2.id
-  description       = "Allow SSH connections to the EC2"
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+    security_group_id = aws_security_group.ec2.id
+    description       = "Allow SSH connections to the EC2"
+    type              = "ingress"
+    from_port         = 22
+    to_port           = 22
+    protocol          = "tcp"
+    cidr_blocks       = ["35.180.112.80/29"]
 }
 
 resource "aws_security_group_rule" "ingress_minecraft" {
-  security_group_id = aws_security_group.ec2.id
-  description       = "Allow connections to the Minecraft server"
-  type              = "ingress"
-  from_port         = 25565
-  to_port           = 25565
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+    security_group_id = aws_security_group.ec2.id
+    description       = "Allow connections to the Minecraft server"
+    type              = "ingress"
+    from_port         = 25565
+    to_port           = 25565
+    protocol          = "tcp"
+    cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_security_group_rule" "egress_all" {
-  security_group_id = aws_security_group.ec2.id
-  description       = "Allow outbound traffic to AWS services"
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
+    security_group_id = aws_security_group.ec2.id
+    description       = "Allow outbound traffic to AWS services"
+    type              = "egress"
+    from_port         = 0
+    to_port           = 0
+    protocol          = "-1"
+    cidr_blocks       = ["0.0.0.0/0"]
 }
 
 # ------------------------------------------------------------------------------
 # EBS
 # ------------------------------------------------------------------------------
 resource "aws_ebs_volume" "minecraft" {
-  availability_zone = "${var.region}a"
-  size = 5
+    availability_zone = "${var.region}a"
+    size = 5
 }
 
 resource "aws_volume_attachment" "minecraft" {
-  device_name = "/srv/minecraft/world"
-  volume_id   = aws_ebs_volume.minecraft.id
-  instance_id = aws_instance.minecraft.id
+    device_name  = "/dev/xvdb"
+    volume_id    = aws_ebs_volume.minecraft.id
+    instance_id  = aws_instance.minecraft.id
+    skip_destroy = true
 }
 
 # ------------------------------------------------------------------------------
